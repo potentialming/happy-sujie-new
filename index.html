@@ -25,7 +25,7 @@
 <body>
     <canvas id="fireworksCanvas"></canvas>
     <!-- 音频资源：使用你提供的真实烟花音效 -->
-    <audio id="firework-source" src="firework_user.mp3?v=2" preload="auto"></audio>
+    <audio id="firework-source" src="firework_user.mp3?v=3" preload="auto"></audio>
 
     <div id="container">
         <div id="step1">
@@ -59,7 +59,7 @@
         // 🔥 真实烟花音效引擎 (使用用户提供的音频文件)
         function playBoom() {
             // 每次爆炸创建一个新的 Audio 对象
-            const audio = new Audio('firework_user.mp3?v=2');
+            const audio = new Audio('firework_user.mp3?v=3');
             
             // 随机化处理：音量大小随机 (0.3 - 1.0)
             const volume = 0.3 + Math.random() * 0.7;

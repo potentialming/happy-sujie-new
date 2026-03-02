@@ -216,6 +216,33 @@
             }
         });
 
+        // 音效管理器 (使用 Web Audio API 生成简易爆炸声，无需外部文件)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playFireworkSound() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            // 模拟爆炸声：从低频迅速滑向更低频，配合音量衰减
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100 + Math.random() * 50, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
         // 阶段 3: 放烟花
         const fireBtn = document.getElementById('fireBtn');
         fireBtn.addEventListener('click', () => {
@@ -295,6 +322,7 @@
                 }
             }
             explode() {
+                playFireworkSound(); // 触发音效
                 for (let i = 0; i < 100; i++) {
                     particles.push(new Particle(this.x, this.y, this.color));
                 }

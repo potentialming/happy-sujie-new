@@ -18,7 +18,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            user-select: none; /* 防止长按选中文字 */
+            user-select: none;
         }
 
         #container {
@@ -85,7 +85,6 @@
             pointer-events: none;
         }
 
-        /* 乌云样式 */
         .cloud-container {
             font-size: 100px;
             margin: 20px 0;
@@ -100,7 +99,6 @@
             100% { transform: translateY(0px); }
         }
 
-        /* 进度条 */
         .loading-bar {
             width: 100%;
             height: 10px;
@@ -116,32 +114,23 @@
             background: #ff9a9e;
             transition: width 0.1s;
         }
-
     </style>
 </head>
 <body>
 
     <canvas id="fireworksCanvas"></canvas>
 
-    <!-- 音频资源 (预加载) -->
-    <audio id="bgm" loop>
-        <source src="https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3" type="audio/mp3">
-        <!-- 备用BGM: 轻柔钢琴 -->
-    </audio>
-    
-    <!-- 烟花爆炸声 (多几个以便重叠播放) -->
-    <audio id="boom1" src="https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3"></audio>
-    <audio id="boom2" src="https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3"></audio>
-    <audio id="boom3" src="https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3"></audio>
-    
-    <!-- 吹气/风声 -->
-    <audio id="wind" src="https://assets.mixkit.co/active_storage/sfx/1384/1384-preview.mp3"></audio>
-    
-    <!-- 欢呼/完成音效 -->
-    <audio id="cheer" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"></audio>
+    <!-- 音频资源: 使用稳定的 Google CodeSkulptor 资源库 (教育用，极其稳定) -->
+    <!-- 烟花爆炸声 -->
+    <audio id="boom1" src="https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/explosion.mp3"></audio>
+    <!-- 使用相同的源，因为加载快且效果够用 -->
+    <audio id="boom2" src="https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/explosion.mp3"></audio> 
+    <audio id="boom3" src="https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/explosion.mp3"></audio>
+
+    <!-- 背景音乐/欢呼: 一个轻快的循环音乐 -->
+    <audio id="cheer" src="https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/soundtrack.mp3" loop></audio>
 
     <div id="container">
-        <!-- 阶段 1: 加载心情 -->
         <div id="step1">
             <h1>检测到小苏同学心情低落... 😟</h1>
             <p>正在启动「超级开心修复程序」...</p>
@@ -151,7 +140,6 @@
             <p id="loadingText">注入可爱能量... 0%</p>
         </div>
 
-        <!-- 阶段 2: 吹走乌云 -->
         <div id="step2" class="hidden">
             <h1>嘿，小苏！👋</h1>
             <p>即使是仙女也会有烦心的时候，对吧？</p>
@@ -160,7 +148,6 @@
             <button class="btn" id="blowBtn">呼—— (点击吹气)</button>
         </div>
 
-        <!-- 阶段 3: 准备惊喜 -->
         <div id="step3" class="hidden">
             <h1>哇！你看！👀</h1>
             <p>乌云后面藏着一片星空 ✨</p>
@@ -168,7 +155,6 @@
             <button class="btn" id="fireBtn">点燃开心 🎆</button>
         </div>
 
-        <!-- 阶段 4: 最终祝福 -->
         <div id="step4" class="hidden">
             <h1>开心点了吗？😊</h1>
             <p>所有的不开心都炸成烟花啦！</p>
@@ -183,23 +169,22 @@
             const audio = document.getElementById(id);
             if(audio) {
                 audio.currentTime = 0;
-                audio.play().catch(e => console.log("Audio play failed (user interaction needed first)", e));
+                audio.play().catch(e => console.log("Audio play failed", e));
             }
         }
 
-        // 随机播放爆炸声
         function playBoom() {
+            // 随机选一个 audio 元素播放，避免卡顿
             const id = 'boom' + (Math.floor(Math.random() * 3) + 1);
             const audio = document.getElementById(id);
             if(audio) {
                 audio.currentTime = 0;
-                audio.volume = 0.6 + Math.random() * 0.4; // 随机音量
-                audio.playbackRate = 0.8 + Math.random() * 0.4; // 随机音调
+                // 简单的随机化
+                audio.volume = 0.5 + Math.random() * 0.5;
                 audio.play().catch(() => {});
             }
         }
 
-        // 简单的逻辑控制
         const step1 = document.getElementById('step1');
         const step2 = document.getElementById('step2');
         const step3 = document.getElementById('step3');
@@ -209,7 +194,6 @@
         const ctx = canvas.getContext('2d');
 
         // 阶段 1: 进度条
-        // 自动开始加载
         let progress = 0;
         const progressBar = document.getElementById('progressBar');
         const loadingText = document.getElementById('loadingText');
@@ -238,10 +222,9 @@
         let blowCount = 0;
 
         blowBtn.addEventListener('click', () => {
-            playSound('wind'); // 播放吹气声
+            // 这里没有专门的风声，暂时不用 sound
             blowCount++;
             
-            // 乌云被吹动的效果
             const moveX = blowCount * 60;
             const rotate = blowCount * 15;
             cloud.style.transform = `translateX(${moveX}px) rotate(${rotate}deg)`;
@@ -255,12 +238,13 @@
                     step3.classList.add('fade-in');
                     step3.style.display = 'block';
                     
-                    // 变暗背景，准备放烟花
                     document.body.style.background = '#000';
                     container.style.background = 'rgba(255, 255, 255, 0.1)';
                     container.style.color = '#fff';
                     document.querySelectorAll('h1, p').forEach(el => el.style.color = '#fff');
-                    playSound('cheer'); // 成功欢呼声
+                    
+                    // 播放欢快的背景音乐
+                    playSound('cheer'); 
                 }, 800);
             }
         });
@@ -270,10 +254,9 @@
         fireBtn.addEventListener('click', () => {
             step3.classList.add('hidden');
             step3.style.display = 'none';
-            container.style.display = 'none'; // 隐藏容器，全屏烟花
+            container.style.display = 'none'; 
             startFireworks();
             
-            // 5秒后显示最终祝福
             setTimeout(() => {
                 container.style.display = 'block';
                 step4.classList.remove('hidden');
@@ -321,7 +304,7 @@
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vy += 0.05; // gravity
+                this.vy += 0.05; 
                 this.alpha -= this.decay;
             }
             draw() {
@@ -340,7 +323,7 @@
                 this.x = Math.random() * canvas.width;
                 this.y = canvas.height;
                 this.targetY = Math.random() * (canvas.height / 2);
-                this.speed = Math.random() * 3 + 10; // faster
+                this.speed = Math.random() * 3 + 10; 
                 this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
                 this.exploded = false;
             }
@@ -352,7 +335,7 @@
                 }
             }
             explode() {
-                playBoom(); // 播放真实爆炸音效
+                playBoom(); // 播放音效
                 for (let i = 0; i < 100; i++) {
                     particles.push(new Particle(this.x, this.y, this.color));
                 }

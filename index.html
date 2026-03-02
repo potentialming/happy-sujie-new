@@ -25,7 +25,7 @@
 <body>
     <canvas id="fireworksCanvas"></canvas>
     <!-- 音频资源：使用你提供的真实烟花音效 -->
-    <audio id="firework-sound" src="firework.mp3"></audio>
+    <audio id="firework-source" src="firework_user.mp3?v=2" preload="auto"></audio>
 
     <div id="container">
         <div id="step1">
@@ -56,61 +56,30 @@
     </div>
 
     <script>
-        // 🔥 高级烟花音效引擎 (使用 Web Audio API 合成真实爆炸声)
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioContext();
-
-        // 创建真实的爆炸声：低频冲击 + 高频噼啪 + 混响尾巴
+        // 🔥 真实烟花音效引擎 (使用用户提供的音频文件)
         function playBoom() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const t = audioCtx.currentTime;
+            // 每次爆炸创建一个新的 Audio 对象
+            const audio = new Audio('firework_user.mp3?v=2');
             
-            // 1. 低频爆炸冲击 (Boom!)
-            const osc = audioCtx.createOscillator();
-            const oscGain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(150, t);
-            osc.frequency.exponentialRampToValueAtTime(40, t + 0.3);
-            oscGain.gain.setValueAtTime(1, t);
-            oscGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
-            osc.connect(oscGain);
-            oscGain.connect(audioCtx.destination);
-            osc.start(t);
-            osc.stop(t + 0.5);
+            // 随机化处理：音量大小随机 (0.3 - 1.0)
+            const volume = 0.3 + Math.random() * 0.7;
+            audio.volume = volume;
+
+            // 随机化处理：播放速度随机 (0.8 - 1.2)
+            audio.playbackRate = 0.8 + Math.random() * 0.4;
             
-            // 2. 噪声层 (噼里啪啦的火花声)
-            const bufferSize = audioCtx.sampleRate * 0.5;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            const noiseFilter = audioCtx.createBiquadFilter();
-            noiseFilter.type = 'lowpass';
-            noiseFilter.frequency.value = 1000;
-            const noiseGain = audioCtx.createGain();
-            noiseGain.gain.setValueAtTime(0.3, t);
-            noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
-            noise.connect(noiseFilter);
-            noiseFilter.connect(noiseGain);
-            noiseGain.connect(audioCtx.destination);
-            noise.start(t);
-            
-            // 3. 高频"尾音" (空气中的回响)
-            const tail = audioCtx.createOscillator();
-            const tailGain = audioCtx.createGain();
-            tail.type = 'triangle';
-            tail.frequency.setValueAtTime(800, t);
-            tail.frequency.exponentialRampToValueAtTime(200, t + 0.6);
-            tailGain.gain.setValueAtTime(0.15, t);
-            tailGain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
-            tail.connect(tailGain);
-            tailGain.connect(audioCtx.destination);
-            tail.start(t);
-            tail.stop(t + 0.6);
+            // 尝试播放
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    // console.log("Audio play failed", e);
+                });
+            }
         }
 
-        // 成功/欢呼音效 (轻快的和弦)
+        // 成功/欢呼音效 (Web Audio API 合成，轻快的和弦)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
         function playCheer() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const t = audioCtx.currentTime;

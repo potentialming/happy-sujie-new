@@ -18,6 +18,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            user-select: none; /* 防止长按选中文字 */
         }
 
         #container {
@@ -56,9 +57,8 @@
             font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
         }
 
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(255, 154, 158, 0.6);
+        .btn:active {
+            transform: scale(0.95);
         }
 
         .hidden {
@@ -91,6 +91,7 @@
             margin: 20px 0;
             animation: float 3s ease-in-out infinite;
             cursor: pointer;
+            transition: transform 0.3s ease-out, opacity 0.3s;
         }
 
         @keyframes float {
@@ -122,6 +123,23 @@
 
     <canvas id="fireworksCanvas"></canvas>
 
+    <!-- 音频资源 (预加载) -->
+    <audio id="bgm" loop>
+        <source src="https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3" type="audio/mp3">
+        <!-- 备用BGM: 轻柔钢琴 -->
+    </audio>
+    
+    <!-- 烟花爆炸声 (多几个以便重叠播放) -->
+    <audio id="boom1" src="https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3"></audio>
+    <audio id="boom2" src="https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3"></audio>
+    <audio id="boom3" src="https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3"></audio>
+    
+    <!-- 吹气/风声 -->
+    <audio id="wind" src="https://assets.mixkit.co/active_storage/sfx/1384/1384-preview.mp3"></audio>
+    
+    <!-- 欢呼/完成音效 -->
+    <audio id="cheer" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"></audio>
+
     <div id="container">
         <!-- 阶段 1: 加载心情 -->
         <div id="step1">
@@ -139,7 +157,7 @@
             <p>即使是仙女也会有烦心的时候，对吧？</p>
             <div class="cloud-container" id="cloud">☁️</div>
             <p>但这朵乌云看起来不想走...<br>除非你帮我一起把它吹跑！</p>
-            <button class="btn" id="blowBtn">呼—— (长按吹气)</button>
+            <button class="btn" id="blowBtn">呼—— (点击吹气)</button>
         </div>
 
         <!-- 阶段 3: 准备惊喜 -->
@@ -160,6 +178,27 @@
     </div>
 
     <script>
+        // 音效控制
+        function playSound(id) {
+            const audio = document.getElementById(id);
+            if(audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log("Audio play failed (user interaction needed first)", e));
+            }
+        }
+
+        // 随机播放爆炸声
+        function playBoom() {
+            const id = 'boom' + (Math.floor(Math.random() * 3) + 1);
+            const audio = document.getElementById(id);
+            if(audio) {
+                audio.currentTime = 0;
+                audio.volume = 0.6 + Math.random() * 0.4; // 随机音量
+                audio.playbackRate = 0.8 + Math.random() * 0.4; // 随机音调
+                audio.play().catch(() => {});
+            }
+        }
+
         // 简单的逻辑控制
         const step1 = document.getElementById('step1');
         const step2 = document.getElementById('step2');
@@ -170,6 +209,7 @@
         const ctx = canvas.getContext('2d');
 
         // 阶段 1: 进度条
+        // 自动开始加载
         let progress = 0;
         const progressBar = document.getElementById('progressBar');
         const loadingText = document.getElementById('loadingText');
@@ -198,50 +238,32 @@
         let blowCount = 0;
 
         blowBtn.addEventListener('click', () => {
+            playSound('wind'); // 播放吹气声
             blowCount++;
-            cloud.style.transform = `translateX(${blowCount * 50}px) rotate(${blowCount * 10}deg)`;
-            cloud.style.opacity = 1 - (blowCount * 0.2);
+            
+            // 乌云被吹动的效果
+            const moveX = blowCount * 60;
+            const rotate = blowCount * 15;
+            cloud.style.transform = `translateX(${moveX}px) rotate(${rotate}deg)`;
+            cloud.style.opacity = 1 - (blowCount * 0.18);
             
             if(blowCount >= 5) {
-                step2.classList.add('hidden');
-                step2.style.display = 'none';
-                step3.classList.remove('hidden');
-                step3.classList.add('fade-in');
-                step3.style.display = 'block';
-                // 变暗背景，准备放烟花
-                document.body.style.background = '#000';
-                container.style.background = 'rgba(255, 255, 255, 0.1)';
-                container.style.color = '#fff';
-                document.querySelectorAll('h1, p').forEach(el => el.style.color = '#fff');
+                setTimeout(() => {
+                    step2.classList.add('hidden');
+                    step2.style.display = 'none';
+                    step3.classList.remove('hidden');
+                    step3.classList.add('fade-in');
+                    step3.style.display = 'block';
+                    
+                    // 变暗背景，准备放烟花
+                    document.body.style.background = '#000';
+                    container.style.background = 'rgba(255, 255, 255, 0.1)';
+                    container.style.color = '#fff';
+                    document.querySelectorAll('h1, p').forEach(el => el.style.color = '#fff');
+                    playSound('cheer'); // 成功欢呼声
+                }, 800);
             }
         });
-
-        // 音效管理器 (使用 Web Audio API 生成简易爆炸声，无需外部文件)
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioContext();
-
-        function playFireworkSound() {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            // 模拟爆炸声：从低频迅速滑向更低频，配合音量衰减
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(100 + Math.random() * 50, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-            
-            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-            
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.5);
-        }
 
         // 阶段 3: 放烟花
         const fireBtn = document.getElementById('fireBtn');
@@ -271,9 +293,17 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        function createTextFirework() {
-            // 这里简化处理，用特定颜色的粒子模拟文字效果太复杂，
-            // 我们直接放大量烟花，并在中间绘制文字
+        function drawText() {
+            if (particles.length > 0) {
+                ctx.save();
+                ctx.fillStyle = "rgba(255, 105, 180, " + (Math.random() * 0.5 + 0.5) + ")";
+                ctx.font = "bold 80px 'ZCOOL KuaiLe'";
+                ctx.textAlign = "center";
+                ctx.shadowColor = "#ff69b4";
+                ctx.shadowBlur = 20;
+                ctx.fillText("宝贝，开心点！❤️", canvas.width/2, canvas.height/2);
+                ctx.restore();
+            }
         }
 
         class Particle {
@@ -322,7 +352,7 @@
                 }
             }
             explode() {
-                playFireworkSound(); // 触发音效
+                playBoom(); // 播放真实爆炸音效
                 for (let i = 0; i < 100; i++) {
                     particles.push(new Particle(this.x, this.y, this.color));
                 }
@@ -333,26 +363,11 @@
             }
         }
 
-        // 特殊文字烟花逻辑 (简化版：直接在屏幕中间画文字)
-        function drawText() {
-            if (particles.length > 0) {
-                ctx.save();
-                ctx.fillStyle = "rgba(255, 105, 180, " + (Math.random() * 0.5 + 0.5) + ")";
-                ctx.font = "bold 80px 'ZCOOL KuaiLe'";
-                ctx.textAlign = "center";
-                ctx.shadowColor = "#ff69b4";
-                ctx.shadowBlur = 20;
-                ctx.fillText("宝贝，开心点！❤️", canvas.width/2, canvas.height/2);
-                ctx.restore();
-            }
-        }
-
         function animate() {
-            // 拖尾效果
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            if (Math.random() < 0.05) { // 随机发射烟花
+            if (Math.random() < 0.05) { 
                 fireworks.push(new Firework());
             }
 

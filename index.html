@@ -1,1 +1,352 @@
-Hello
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>给苏洁的专属开心卡片 💌</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #container {
+            text-align: center;
+            z-index: 10;
+            position: relative;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 90%;
+            transition: all 0.5s ease;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+            border: none;
+            padding: 15px 40px;
+            color: white;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 154, 158, 0.6);
+        }
+
+        .hidden {
+            display: none;
+            opacity: 0;
+        }
+
+        .fade-in {
+            animation: fadeIn 1s forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* 乌云样式 */
+        .cloud-container {
+            font-size: 100px;
+            margin: 20px 0;
+            animation: float 3s ease-in-out infinite;
+            cursor: pointer;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* 进度条 */
+        .loading-bar {
+            width: 100%;
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress {
+            width: 0%;
+            height: 100%;
+            background: #ff9a9e;
+            transition: width 0.1s;
+        }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="fireworksCanvas"></canvas>
+
+    <div id="container">
+        <!-- 阶段 1: 加载心情 -->
+        <div id="step1">
+            <h1>检测到苏洁同学心情低落... 😟</h1>
+            <p>正在启动「超级开心修复程序」...</p>
+            <div class="loading-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+            <p id="loadingText">注入可爱能量... 0%</p>
+        </div>
+
+        <!-- 阶段 2: 吹走乌云 -->
+        <div id="step2" class="hidden">
+            <h1>嘿，苏洁！👋</h1>
+            <p>即使是仙女也会有烦心的时候，对吧？</p>
+            <div class="cloud-container" id="cloud">☁️</div>
+            <p>但这朵乌云看起来不想走...<br>除非你帮我一起把它吹跑！</p>
+            <button class="btn" id="blowBtn">呼—— (长按吹气)</button>
+        </div>
+
+        <!-- 阶段 3: 准备惊喜 -->
+        <div id="step3" class="hidden">
+            <h1>哇！你看！👀</h1>
+            <p>乌云后面藏着一片星空 ✨</p>
+            <p>还有一个专门为你准备的小魔法...</p>
+            <button class="btn" id="fireBtn">点燃开心 🎆</button>
+        </div>
+
+        <!-- 阶段 4: 最终祝福 -->
+        <div id="step4" class="hidden">
+            <h1>开心点了吗？😊</h1>
+            <p>所有的不开心都炸成烟花啦！</p>
+            <p>—— 爱你的明哥 & mbot</p>
+            <button class="btn" onclick="location.reload()">再看一次烟花</button>
+        </div>
+    </div>
+
+    <script>
+        // 简单的逻辑控制
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
+        const step4 = document.getElementById('step4');
+        const container = document.getElementById('container');
+        const canvas = document.getElementById('fireworksCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 阶段 1: 进度条
+        let progress = 0;
+        const progressBar = document.getElementById('progressBar');
+        const loadingText = document.getElementById('loadingText');
+        
+        const timer = setInterval(() => {
+            progress += Math.random() * 5;
+            if(progress > 100) progress = 100;
+            progressBar.style.width = progress + '%';
+            loadingText.innerText = `注入可爱能量... ${Math.floor(progress)}%`;
+            
+            if(progress === 100) {
+                clearInterval(timer);
+                setTimeout(() => {
+                    step1.classList.add('hidden');
+                    step1.style.display = 'none';
+                    step2.classList.remove('hidden');
+                    step2.classList.add('fade-in');
+                    step2.style.display = 'block';
+                }, 500);
+            }
+        }, 100);
+
+        // 阶段 2: 吹走乌云
+        const blowBtn = document.getElementById('blowBtn');
+        const cloud = document.getElementById('cloud');
+        let blowCount = 0;
+
+        blowBtn.addEventListener('click', () => {
+            blowCount++;
+            cloud.style.transform = `translateX(${blowCount * 50}px) rotate(${blowCount * 10}deg)`;
+            cloud.style.opacity = 1 - (blowCount * 0.2);
+            
+            if(blowCount >= 5) {
+                step2.classList.add('hidden');
+                step2.style.display = 'none';
+                step3.classList.remove('hidden');
+                step3.classList.add('fade-in');
+                step3.style.display = 'block';
+                // 变暗背景，准备放烟花
+                document.body.style.background = '#000';
+                container.style.background = 'rgba(255, 255, 255, 0.1)';
+                container.style.color = '#fff';
+                document.querySelectorAll('h1, p').forEach(el => el.style.color = '#fff');
+            }
+        });
+
+        // 阶段 3: 放烟花
+        const fireBtn = document.getElementById('fireBtn');
+        fireBtn.addEventListener('click', () => {
+            step3.classList.add('hidden');
+            step3.style.display = 'none';
+            container.style.display = 'none'; // 隐藏容器，全屏烟花
+            startFireworks();
+            
+            // 5秒后显示最终祝福
+            setTimeout(() => {
+                container.style.display = 'block';
+                step4.classList.remove('hidden');
+                step4.classList.add('fade-in');
+                step4.style.display = 'block';
+            }, 8000);
+        });
+
+        // 烟花逻辑
+        let fireworks = [];
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function createTextFirework() {
+            // 这里简化处理，用特定颜色的粒子模拟文字效果太复杂，
+            // 我们直接放大量烟花，并在中间绘制文字
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 2;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.015 + 0.005;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.05; // gravity
+                this.alpha -= this.decay;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Firework {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height;
+                this.targetY = Math.random() * (canvas.height / 2);
+                this.speed = Math.random() * 3 + 10; // faster
+                this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                this.exploded = false;
+            }
+            update() {
+                this.y -= this.speed;
+                if (this.y <= this.targetY) {
+                    this.exploded = true;
+                    this.explode();
+                }
+            }
+            explode() {
+                for (let i = 0; i < 100; i++) {
+                    particles.push(new Particle(this.x, this.y, this.color));
+                }
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, 3, 10);
+            }
+        }
+
+        // 特殊文字烟花逻辑 (简化版：直接在屏幕中间画文字)
+        function drawText() {
+            if (particles.length > 0) {
+                ctx.save();
+                ctx.fillStyle = "rgba(255, 105, 180, " + (Math.random() * 0.5 + 0.5) + ")";
+                ctx.font = "bold 80px 'ZCOOL KuaiLe'";
+                ctx.textAlign = "center";
+                ctx.shadowColor = "#ff69b4";
+                ctx.shadowBlur = 20;
+                ctx.fillText("苏洁，开心点！❤️", canvas.width/2, canvas.height/2);
+                ctx.restore();
+            }
+        }
+
+        function animate() {
+            // 拖尾效果
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (Math.random() < 0.05) { // 随机发射烟花
+                fireworks.push(new Firework());
+            }
+
+            fireworks.forEach((fw, index) => {
+                fw.update();
+                fw.draw();
+                if (fw.exploded) fireworks.splice(index, 1);
+            });
+
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw();
+                if (p.alpha <= 0) particles.splice(index, 1);
+            });
+
+            drawText();
+            requestAnimationFrame(animate);
+        }
+
+        function startFireworks() {
+            animate();
+        }
+    </script>
+</body>
+</html>
